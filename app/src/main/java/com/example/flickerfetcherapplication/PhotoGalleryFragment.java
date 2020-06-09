@@ -1,24 +1,36 @@
 package com.example.flickerfetcherapplication;
 
+import android.app.Activity;
+import android.app.SearchManager;
+import android.app.SearchableInfo;
+import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.collection.LruCache;
+import androidx.core.view.MenuItemCompat;
 import androidx.fragment.app.Fragment;
 
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
+import android.widget.SearchView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -45,7 +57,8 @@ public class PhotoGalleryFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
-        new FetchItemsTask().execute();
+        setHasOptionsMenu(true);
+        updateItems();
         thumbnailDownloader = new ThumbnailDownloader<>(new Handler());
         thumbnailDownloader.setListener(new ThumbnailDownloader.Listener<ImageView>() {
             @Override
@@ -104,6 +117,15 @@ public class PhotoGalleryFragment extends Fragment {
     {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... voids) {
+            if(getActivity() == null)
+            {
+                return new ArrayList<GalleryItem>();
+            }
+            String query = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(FlickerFetcher.PREF_SEARCH_QUERY,null);
+            if(query != null)
+            {
+                return new FlickerFetcher().search(query);
+            }
             return new FlickerFetcher().fetchItems();
 
         }
@@ -114,6 +136,12 @@ public class PhotoGalleryFragment extends Fragment {
             setupAdapter();
         }
     }
+
+    public void updateItems()
+    {
+        new FetchItemsTask().execute();
+    }
+
 
     private void setupAdapter()
     {
@@ -129,7 +157,38 @@ public class PhotoGalleryFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onCreateOptionsMenu(@NonNull final Menu menu, @NonNull MenuInflater inflater) {
+        //super.onCreateOptionsMenu(menu, inflater);
+        inflater.inflate(R.menu.menu_main,menu);
+            final MenuItem searchItem = menu.findItem(R.id.app_bar_search);
+            SearchView searchView = (SearchView) searchItem.getActionView();
 
+            SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+            ComponentName componentName = getActivity().getComponentName();
+            SearchableInfo searchableInfo =  searchManager.getSearchableInfo(componentName);
+            searchView.setSearchableInfo(searchableInfo);
+
+
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        switch (item.getItemId())
+        {
+            case R.id.app_bar_search:
+                getActivity().onSearchRequested();
+
+                return true;
+
+            case R.id.item_clear:
+                PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,null).commit();
+                updateItems();
+                return true;
+
+        }
+        return false;
+    }
 
     @Override
     public void onDestroyView() {
@@ -138,5 +197,6 @@ public class PhotoGalleryFragment extends Fragment {
 
 
     }
+
 
 }
