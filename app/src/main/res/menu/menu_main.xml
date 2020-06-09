@@ -13,6 +13,10 @@
         android:icon="@drawable/ic_baseline_clear_24"
         android:title="@string/clear"
         app:showAsAction="ifRoom" />
+    <item
+        android:id="@+id/Toggle_Polling"
+        android:title="@string/toggle_polling"
+        app:showAsAction="ifRoom" />
 
 
 </menu>

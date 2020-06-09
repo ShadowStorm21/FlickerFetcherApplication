@@ -5,6 +5,8 @@ import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -58,6 +60,7 @@ public class PhotoGalleryFragment extends Fragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         setHasOptionsMenu(true);
+
         updateItems();
         thumbnailDownloader = new ThumbnailDownloader<>(new Handler());
         thumbnailDownloader.setListener(new ThumbnailDownloader.Listener<ImageView>() {
@@ -117,16 +120,21 @@ public class PhotoGalleryFragment extends Fragment {
     {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... voids) {
+
             if(getActivity() == null)
-            {
                 return new ArrayList<GalleryItem>();
-            }
+
             String query = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(FlickerFetcher.PREF_SEARCH_QUERY,null);
+
             if(query != null)
             {
                 return new FlickerFetcher().search(query);
             }
-            return new FlickerFetcher().fetchItems();
+            else
+            {
+               return new FlickerFetcher().fetchItems();
+            }
+
 
         }
 
@@ -141,6 +149,8 @@ public class PhotoGalleryFragment extends Fragment {
     {
         new FetchItemsTask().execute();
     }
+
+
 
 
     private void setupAdapter()
@@ -159,36 +169,58 @@ public class PhotoGalleryFragment extends Fragment {
 
     @Override
     public void onCreateOptionsMenu(@NonNull final Menu menu, @NonNull MenuInflater inflater) {
-        //super.onCreateOptionsMenu(menu, inflater);
         inflater.inflate(R.menu.menu_main,menu);
-            final MenuItem searchItem = menu.findItem(R.id.app_bar_search);
-            SearchView searchView = (SearchView) searchItem.getActionView();
-
-            SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
-            ComponentName componentName = getActivity().getComponentName();
-            SearchableInfo searchableInfo =  searchManager.getSearchableInfo(componentName);
-            searchView.setSearchableInfo(searchableInfo);
+        MenuItem searchItem = menu.findItem(R.id.app_bar_search);
+        SearchView searchView = (SearchView) searchItem.getActionView();
+        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+        ComponentName componentName = getActivity().getComponentName();
+        SearchableInfo searchableInfo = searchManager.getSearchableInfo(componentName);
+        searchView.setSearchableInfo(searchableInfo);
 
 
     }
+    @Override
+    public void onPrepareOptionsMenu(@NonNull Menu menu) {
+        MenuItem menuItem = menu.findItem(R.id.Toggle_Polling);
+        if(PollService.isAlarmSet(getActivity())) {
+            menuItem.setTitle("Stop Polling");
+            menuItem.setIcon(R.drawable.ic_baseline_sync_disabled_24);
+        }
+        else
+        {
+            menuItem.setTitle("Start Polling");
+            menuItem.setIcon(R.drawable.ic_baseline_sync_24);
+        }
+
+    }
+
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId())
         {
+
             case R.id.app_bar_search:
                 getActivity().onSearchRequested();
 
                 return true;
 
             case R.id.item_clear:
-                PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,null).commit();
+                PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,null).commit(); // if you use apply method, thumbnails will be downloaded in the background
                 updateItems();
+                return true;
+
+            case R.id.Toggle_Polling:
+                boolean shouldStartAlarm = !PollService.isAlarmSet(getActivity());
+                PollService.setAlarmService(getActivity(),shouldStartAlarm);
+                getActivity().invalidateOptionsMenu();
                 return true;
 
         }
         return false;
     }
+
+
 
     @Override
     public void onDestroyView() {

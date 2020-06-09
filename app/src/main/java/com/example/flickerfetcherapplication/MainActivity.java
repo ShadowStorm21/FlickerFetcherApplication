@@ -29,18 +29,19 @@ public class MainActivity extends SingleFragmentActivity {
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        Log.i(TAG,"I got intent from "+intent);
+
         PhotoGalleryFragment fragment = (PhotoGalleryFragment) getSupportFragmentManager().findFragmentById(R.id.fragmentContainer);
 
         if(intent.ACTION_SEARCH.equals(intent.getAction()))
         {
             String query = intent.getStringExtra(SearchManager.QUERY);
-            Log.i(TAG,"Received a new Search query "+query);
-            PreferenceManager.getDefaultSharedPreferences(this).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,query).commit();
-            Toast.makeText(this, "Search results found :"+FlickerFetcher.count, Toast.LENGTH_SHORT).show();
+            Log.i(TAG,"Received a query from "+query);
+            PreferenceManager.getDefaultSharedPreferences(this).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,query).commit(); // if you use apply method, thumbnails will be downloaded in the background
+            Toast.makeText(this, "Search results : "+FlickerFetcher.count, Toast.LENGTH_SHORT).show();
+
         }
         fragment.updateItems();
 
-
     }
-
 }

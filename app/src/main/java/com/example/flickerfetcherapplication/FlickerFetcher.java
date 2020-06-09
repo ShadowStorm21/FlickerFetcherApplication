@@ -24,6 +24,7 @@ public class FlickerFetcher {
     private static final String API_KEY = "ec2c476009243cb859330e55f4784da2";
     private static final String METHOD_GET_RECENT = "flickr.photos.getRecent";
     private static final String METHOD_SEARCH = "flickr.photos.search";
+    public static final String PREF_LAST_RESULT_ID = "lastResultId";
     public static final String PREF_SEARCH_QUERY = "searchQuery";
     private static final String PARAM_EXTRAS = "extras";
     private static final String EXTRA_SMALL_URL = "url_s";
@@ -95,6 +96,7 @@ public class FlickerFetcher {
                 .appendQueryParameter(PARAM_EXTRAS,EXTRA_SMALL_URL).appendQueryParameter(PARAM_TEXT,query).build().toString();
         return downloadGalleryItems(url);
     }
+
 
 
 
