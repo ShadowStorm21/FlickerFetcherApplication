@@ -8,7 +8,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.net.ConnectivityManager;
 import android.os.Build;
@@ -23,7 +22,7 @@ import java.util.ArrayList;
 public class PollService extends IntentService {
 
     private static final String TAG = "PollService";
-    private static final int POLL_INTERVAL = 1000 * 60 * 5 ; // 5 min
+    private static final int POLL_INTERVAL = 1000 * 60 * 5 ; // set the polling rate to 5 min
     public PollService() {
         super(TAG);
     }
@@ -33,30 +32,30 @@ public class PollService extends IntentService {
 
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
         assert connectivityManager != null;
-        boolean isNetworkAvailable = connectivityManager.getBackgroundDataSetting() && connectivityManager.getActiveNetworkInfo() != null;
+        boolean isNetworkAvailable = connectivityManager.getBackgroundDataSetting() && connectivityManager.getActiveNetworkInfo() != null;   // check if the network and background data setting  is available
 
-        if(!isNetworkAvailable)
+        if(!isNetworkAvailable) // if not available just return
             return;
 
-        String lastResult_id = PreferenceManager.getDefaultSharedPreferences(this).getString(FlickerFetcher.PREF_LAST_RESULT_ID,null);
-        String query = PreferenceManager.getDefaultSharedPreferences(this).getString(FlickerFetcher.PREF_SEARCH_QUERY,null);
+        String lastResult_id = PreferenceManager.getDefaultSharedPreferences(this).getString(FlickerFetcher.PREF_LAST_RESULT_ID,null); // get the last result id from the shared preferences
+        String query = PreferenceManager.getDefaultSharedPreferences(this).getString(FlickerFetcher.PREF_SEARCH_QUERY,null); // get the search query from the shared preferences
         ArrayList<GalleryItem> items;
 
-        if(query != null)
+        if(query != null) // get if we have a search query
         {
-            items = new FlickerFetcher().search(query);
+            items = new FlickerFetcher().search(query); // return searched items
         }
         else
         {
-            items = new FlickerFetcher().fetchItems();
+            items = new FlickerFetcher().fetchItems(); // return new items
         }
 
         if(items.size() == 0)
             return;
 
-        String result_id = items.get(0).getID();
+        String result_id = items.get(0).getID(); // get the result id from the array list
 
-        if(!result_id.equals(lastResult_id))
+        if(!result_id.equals(lastResult_id)) // check if the result id not equals to the last result id
         {
             Resources resources = getResources();
             PendingIntent pendingIntent = PendingIntent.getActivity(this,0,new Intent(this,MainActivity.class),0);
@@ -73,38 +72,40 @@ public class PollService extends IntentService {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 notificationManager.createNotificationChannel(notificationChannel);
             }
-            notificationManager.notify(0,notification);
 
+            notificationManager.notify(0,notification);
+                                                                                        // send a notification that there is a new results
             Log.i(TAG,"I got new Result "+result_id);
         }
         else
         {
             Log.i(TAG,"I got old Result "+result_id);
+            // results are the same, dont do anything
         }
 
-        PreferenceManager.getDefaultSharedPreferences(this).edit().putString(FlickerFetcher.PREF_LAST_RESULT_ID,result_id).commit();
+        PreferenceManager.getDefaultSharedPreferences(this).edit().putString(FlickerFetcher.PREF_LAST_RESULT_ID,result_id).commit(); // save the last result id in the shared preferences
 
     }
 
-    public static void setAlarmService(Context context,boolean isOn)
+    public static void setAlarmService(Context context,boolean isOn)  // a method to set the alarm to service to notify the user
     {
         Intent intent = new Intent(context,PollService.class);
         PendingIntent pendingIntent = PendingIntent.getService(context,0,intent,0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(ALARM_SERVICE);
 
-        if(isOn)
+        if(isOn) // check if the alarm is on
         {
-            alarmManager.setRepeating(AlarmManager.RTC,System.currentTimeMillis(),POLL_INTERVAL,pendingIntent);
+            alarmManager.setRepeating(AlarmManager.RTC,System.currentTimeMillis(),POLL_INTERVAL,pendingIntent);  // set alarm to repeat each 5 min
 
         }
         else
         {
-            alarmManager.cancel(pendingIntent);
-            pendingIntent.cancel();
+            alarmManager.cancel(pendingIntent); // cancel the alarm
+            pendingIntent.cancel(); // cancel the pending intent
         }
     }
 
-    public static boolean isAlarmSet(Context context)
+    public static boolean isAlarmSet(Context context) // method to check if the alarm is set or not
     {
         Intent intent = new Intent(context,PollService.class);
         PendingIntent pendingIntent = PendingIntent.getService(context,0,intent,PendingIntent.FLAG_NO_CREATE);

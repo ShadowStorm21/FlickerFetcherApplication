@@ -32,12 +32,12 @@ public class FlickerFetcher {
     private static final String PARAM_TEXT = "text";
     public static int count = 0;
 
-    public byte[] getBytes(String url) throws IOException {
+    public byte[] getBytes(String url) throws IOException {           // Method to get the images in byte format
         URL mUrl = new URL(url);
         HttpURLConnection connection = (HttpURLConnection) mUrl.openConnection();
 
         try {
-            if(connection.getResponseCode() != HttpURLConnection.HTTP_OK)
+            if(connection.getResponseCode() != HttpURLConnection.HTTP_OK)    // check if connection is valid or not
             {
                 return null;
             }
@@ -48,9 +48,9 @@ public class FlickerFetcher {
                 int byteRead = 0;
                 byte[] buffer = new byte[1024];
 
-                while ((byteRead = inputStream.read(buffer)) > 0)
+                while ((byteRead = inputStream.read(buffer)) > 0)              // read the input from the website
                 {
-                    byteArrayOutputStream.write(buffer,0,byteRead);
+                    byteArrayOutputStream.write(buffer,0,byteRead);      // write the bytes
                 }
                 byteArrayOutputStream.close();
                 return byteArrayOutputStream.toByteArray();
@@ -60,22 +60,22 @@ public class FlickerFetcher {
             connection.disconnect();
         }
     }
-    public String getUrl(String url) throws IOException {
+    public String getUrl(String url) throws IOException {  // method to get the url
 
         return new String(getBytes(url));
     }
 
 
-    public ArrayList<GalleryItem> downloadGalleryItems(String url)
+    public ArrayList<GalleryItem> downloadGalleryItems(String url)  // method to to download the items from flicker
     {
         ArrayList<GalleryItem> items = new ArrayList<>();
 
         try {
-            String xmlString = getUrl(url);
+            String xmlString = getUrl(url); // get the url
             XmlPullParserFactory parserFactory = XmlPullParserFactory.newInstance();
             XmlPullParser parser = parserFactory.newPullParser();
             parser.setInput(new StringReader(xmlString));
-            parseItems(items,parser);
+            parseItems(items,parser); // parse the xml content
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -84,13 +84,13 @@ public class FlickerFetcher {
         }
         return items;
     }
-    public ArrayList<GalleryItem> fetchItems()
+    public ArrayList<GalleryItem> fetchItems()        // method to build the url to fetch the recent items from flicker
     {
         String url = Uri.parse(ENDPOINT).buildUpon().appendQueryParameter("method",METHOD_GET_RECENT).appendQueryParameter("api_key",API_KEY)
                 .appendQueryParameter(PARAM_EXTRAS,EXTRA_SMALL_URL).build().toString();
         return downloadGalleryItems(url);
     }
-    public ArrayList<GalleryItem> search(String query)
+    public ArrayList<GalleryItem> search(String query) // method to build the url to search about an item in flicker
     {
         String url = Uri.parse(ENDPOINT).buildUpon().appendQueryParameter("method",METHOD_SEARCH).appendQueryParameter("api_key",API_KEY)
                 .appendQueryParameter(PARAM_EXTRAS,EXTRA_SMALL_URL).appendQueryParameter(PARAM_TEXT,query).build().toString();
@@ -100,24 +100,24 @@ public class FlickerFetcher {
 
 
 
-    public void parseItems(ArrayList<GalleryItem> items, XmlPullParser parser) throws XmlPullParserException, IOException {
+    public void parseItems(ArrayList<GalleryItem> items, XmlPullParser parser) throws XmlPullParserException, IOException {   // method to parse the items from XML format
 
-        int eventType = parser.getEventType();
+        int eventType = parser.getEventType();     // get the event type
 
-        while (eventType != XmlPullParser.END_DOCUMENT)
+        while (eventType != XmlPullParser.END_DOCUMENT)    // iterate over the document until the end
         {
-            if(eventType == XmlPullParser.START_TAG && XML_PHOTO.equals(parser.getName()))
+            if(eventType == XmlPullParser.START_TAG && XML_PHOTO.equals(parser.getName()))          // check if the event type equals the starting tag and it is a photo
             {
                 String id = parser.getAttributeValue(null,"id");
-                String caption = parser.getAttributeValue(null,"title");
+                String caption = parser.getAttributeValue(null,"title");      // get the id and caption and url from it
                 String smallUrl = parser.getAttributeValue(null,EXTRA_SMALL_URL);
 
-                GalleryItem galleryItem = new GalleryItem(id,caption,smallUrl);
+                GalleryItem galleryItem = new GalleryItem(id,caption,smallUrl);       // create a new item
                 count++;
-                items.add(galleryItem);
+                items.add(galleryItem);         // add the new item to the arraylist
 
             }
-            eventType = parser.next();
+            eventType = parser.next(); // go the next tag in the document
         }
     }
 

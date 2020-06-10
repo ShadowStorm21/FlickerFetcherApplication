@@ -58,18 +58,18 @@ public class PhotoGalleryFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setRetainInstance(true);
-        setHasOptionsMenu(true);
+        setRetainInstance(true); // save the instance when rotating the device
+        setHasOptionsMenu(true); // set the activity to have a menu
 
         updateItems();
-        thumbnailDownloader = new ThumbnailDownloader<>(new Handler());
-        thumbnailDownloader.setListener(new ThumbnailDownloader.Listener<ImageView>() {
+        thumbnailDownloader = new ThumbnailDownloader<>(new Handler()); // initialize the class
+        thumbnailDownloader.setListener(new ThumbnailDownloader.Listener<ImageView>() {  // set the listener
             @Override
             public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail) {
-                if(isVisible())
+                if(!imageView.isShown())
                 {
 
-                    imageView.setImageBitmap(thumbnail);
+                    imageView.setImageBitmap(thumbnail); // set the bitmap
                 }
             }
         });
@@ -111,12 +111,12 @@ public class PhotoGalleryFragment extends Fragment {
             if(item.getUrl() != null)
                 //this can be used for caching images
             //Glide.with(getActivity()).load(Uri.parse(item.getUrl())).centerCrop().diskCacheStrategy(DiskCacheStrategy.DATA).placeholder(R.drawable.ic_baseline_autorenew_24).into(imageView);
-            thumbnailDownloader.queueThumbnail(imageView,item.getUrl());
+            thumbnailDownloader.queueThumbnail(imageView,item.getUrl());      // queue the the thumbnails to be downloaded in the background
             return convertView;
         }
     }
 
-    private class FetchItemsTask extends AsyncTask<Void,Void,ArrayList<GalleryItem>>
+    private class FetchItemsTask extends AsyncTask<Void,Void,ArrayList<GalleryItem>>     // background task to download the items
     {
         @Override
         protected ArrayList<GalleryItem> doInBackground(Void... voids) {
@@ -124,15 +124,15 @@ public class PhotoGalleryFragment extends Fragment {
             if(getActivity() == null)
                 return new ArrayList<GalleryItem>();
 
-            String query = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(FlickerFetcher.PREF_SEARCH_QUERY,null);
+            String query = PreferenceManager.getDefaultSharedPreferences(getContext()).getString(FlickerFetcher.PREF_SEARCH_QUERY,null); // get the search query from the shared preferences
 
-            if(query != null)
+            if(query != null) // check if we have a search request or not
             {
-                return new FlickerFetcher().search(query);
+                return new FlickerFetcher().search(query); // if so return the searched items
             }
             else
             {
-               return new FlickerFetcher().fetchItems();
+               return new FlickerFetcher().fetchItems(); // if not return new items
             }
 
 
@@ -172,7 +172,7 @@ public class PhotoGalleryFragment extends Fragment {
         inflater.inflate(R.menu.menu_main,menu);
         MenuItem searchItem = menu.findItem(R.id.app_bar_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
-        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);
+        SearchManager searchManager = (SearchManager) getActivity().getSystemService(Context.SEARCH_SERVICE);   // this is how you set the search bar
         ComponentName componentName = getActivity().getComponentName();
         SearchableInfo searchableInfo = searchManager.getSearchableInfo(componentName);
         searchView.setSearchableInfo(searchableInfo);
@@ -182,13 +182,13 @@ public class PhotoGalleryFragment extends Fragment {
     @Override
     public void onPrepareOptionsMenu(@NonNull Menu menu) {
         MenuItem menuItem = menu.findItem(R.id.Toggle_Polling);
-        if(PollService.isAlarmSet(getActivity())) {
+        if(PollService.isAlarmSet(getActivity())) {  // if sync is set, change the title and icon
             menuItem.setTitle("Stop Polling");
             menuItem.setIcon(R.drawable.ic_baseline_sync_disabled_24);
         }
         else
         {
-            menuItem.setTitle("Start Polling");
+            menuItem.setTitle("Start Polling");           // if sync is not set, return to the default title and icon
             menuItem.setIcon(R.drawable.ic_baseline_sync_24);
         }
 
@@ -201,19 +201,19 @@ public class PhotoGalleryFragment extends Fragment {
         {
 
             case R.id.app_bar_search:
-                getActivity().onSearchRequested();
+                getActivity().onSearchRequested(); // get the search query from user
 
                 return true;
 
             case R.id.item_clear:
                 PreferenceManager.getDefaultSharedPreferences(getContext()).edit().putString(FlickerFetcher.PREF_SEARCH_QUERY,null).commit(); // if you use apply method, thumbnails will be downloaded in the background
-                updateItems();
+                updateItems();      // set the query to null if the user clicked on the exit button and then update the items
                 return true;
 
             case R.id.Toggle_Polling:
-                boolean shouldStartAlarm = !PollService.isAlarmSet(getActivity());
-                PollService.setAlarmService(getActivity(),shouldStartAlarm);
-                getActivity().invalidateOptionsMenu();
+                boolean shouldStartAlarm = !PollService.isAlarmSet(getActivity()); // if alarm is not set
+                PollService.setAlarmService(getActivity(),shouldStartAlarm);   // set alarm
+                getActivity().invalidateOptionsMenu(); // this is needed to change the title and icons on runtime for the user
                 return true;
 
         }
@@ -225,7 +225,7 @@ public class PhotoGalleryFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        thumbnailDownloader.clearQueue();
+        thumbnailDownloader.clearQueue(); // clear the queue when the view is destroyed
 
 
     }

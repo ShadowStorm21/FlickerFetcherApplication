@@ -9,7 +9,7 @@ import androidx.fragment.app.FragmentManager;
 
 public abstract class SingleFragmentActivity extends AppCompatActivity {
 
-    protected abstract Fragment createFragment();
+    protected abstract Fragment createFragment(); // a method to create Fragments
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -17,7 +17,7 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         FragmentManager fragmentManager = getSupportFragmentManager();
-        Fragment fragment = fragmentManager.findFragmentById(R.id.fragmentContainer);
+        Fragment fragment = fragmentManager.findFragmentById(R.id.fragmentContainer);  // get the fragment using the container id
 
         if(fragment == null)
         {
