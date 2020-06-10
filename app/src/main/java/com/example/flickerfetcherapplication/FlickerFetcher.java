@@ -111,8 +111,9 @@ public class FlickerFetcher {
                 String id = parser.getAttributeValue(null,"id");
                 String caption = parser.getAttributeValue(null,"title");      // get the id and caption and url from it
                 String smallUrl = parser.getAttributeValue(null,EXTRA_SMALL_URL);
+                String owner = parser.getAttributeValue(null,"owner");
 
-                GalleryItem galleryItem = new GalleryItem(id,caption,smallUrl);       // create a new item
+                GalleryItem galleryItem = new GalleryItem(id,caption,smallUrl,owner);       // create a new item
                 count++;
                 items.add(galleryItem);         // add the new item to the arraylist
 

@@ -1,5 +1,6 @@
 package com.example.flickerfetcherapplication;
 
+import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.IntentService;
 import android.app.Notification;
@@ -17,12 +18,16 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
 
 public class PollService extends IntentService {
 
     private static final String TAG = "PollService";
-    private static final int POLL_INTERVAL = 1000 * 60 * 5 ; // set the polling rate to 5 min
+    private static final int POLL_INTERVAL = 1000 * 60 * 3 ; // set the polling rate to 3 min
+    public static final String PERF_IS_ALARM_ON = "isAlarmOn";
+    public static final String ACTION_SHOW_NOTIFICATION = "com.example.flickerfetcherapplication.SHOW_NOTIFICATION";
+    public static final String PERM_PRIVATE = "com.example.flickerfetcherapplication.PRIVATE";      // signature key for the broadcast
     public PollService() {
         super(TAG);
     }
@@ -68,19 +73,21 @@ public class PollService extends IntentService {
                     setTicker(resources.getString(R.string.newpic)).setSmallIcon(android.R.drawable.ic_menu_report_image)
                     .setContentTitle(resources.getString(R.string.newpic)).setContentText("You have a new Picture!")
                     .setContentIntent(pendingIntent).setAutoCancel(true).build();
-            NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
                 notificationManager.createNotificationChannel(notificationChannel);
             }
 
-            notificationManager.notify(0,notification);
+            showBackgroundNotification(0,notification);
                                                                                         // send a notification that there is a new results
             Log.i(TAG,"I got new Result "+result_id);
+
         }
         else
         {
             Log.i(TAG,"I got old Result "+result_id);
-            // results are the same, dont do anything
+            // results are the same, do not do anything
         }
 
         PreferenceManager.getDefaultSharedPreferences(this).edit().putString(FlickerFetcher.PREF_LAST_RESULT_ID,result_id).commit(); // save the last result id in the shared preferences
@@ -95,7 +102,7 @@ public class PollService extends IntentService {
 
         if(isOn) // check if the alarm is on
         {
-            alarmManager.setRepeating(AlarmManager.RTC,System.currentTimeMillis(),POLL_INTERVAL,pendingIntent);  // set alarm to repeat each 5 min
+            alarmManager.setRepeating(AlarmManager.RTC,System.currentTimeMillis(),POLL_INTERVAL,pendingIntent);  // set alarm to repeat each 3 min
 
         }
         else
@@ -103,6 +110,8 @@ public class PollService extends IntentService {
             alarmManager.cancel(pendingIntent); // cancel the alarm
             pendingIntent.cancel(); // cancel the pending intent
         }
+
+        PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean(PERF_IS_ALARM_ON,isOn).commit(); // save the PERF alarm in the shard preference
     }
 
     public static boolean isAlarmSet(Context context) // method to check if the alarm is set or not
@@ -110,5 +119,14 @@ public class PollService extends IntentService {
         Intent intent = new Intent(context,PollService.class);
         PendingIntent pendingIntent = PendingIntent.getService(context,0,intent,PendingIntent.FLAG_NO_CREATE);
         return pendingIntent != null;
+    }
+
+    public void showBackgroundNotification(int requestCode, Notification notification)  // method to show the notification when Photo fragment is not visible to the user
+    {
+        Intent intent = new Intent(ACTION_SHOW_NOTIFICATION);
+        intent.putExtra("REQUEST_CODE",requestCode);
+        intent.putExtra("NOTIFICATION",notification);
+        sendOrderedBroadcast(intent,PERM_PRIVATE,null,null, Activity.RESULT_OK,null,null);     // Send the action with a broadcast
+
     }
 }

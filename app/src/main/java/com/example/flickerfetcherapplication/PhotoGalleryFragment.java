@@ -1,6 +1,7 @@
 package com.example.flickerfetcherapplication;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.app.SearchManager;
 import android.app.SearchableInfo;
 import android.content.ComponentName;
@@ -18,6 +19,7 @@ import androidx.annotation.Nullable;
 import androidx.collection.LruCache;
 import androidx.core.view.MenuItemCompat;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -28,6 +30,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
@@ -42,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class PhotoGalleryFragment extends Fragment {
+public class PhotoGalleryFragment extends VisibleFragment {
 
     private static final String TAG = "PhotoGalleryFragment";
     private GridView mGridView;
@@ -66,7 +70,7 @@ public class PhotoGalleryFragment extends Fragment {
         thumbnailDownloader.setListener(new ThumbnailDownloader.Listener<ImageView>() {  // set the listener
             @Override
             public void onThumbnailDownloaded(ImageView imageView, Bitmap thumbnail) {
-                if(!imageView.isShown())
+                if(imageView.isShown())
                 {
 
                     imageView.setImageBitmap(thumbnail); // set the bitmap
@@ -86,6 +90,18 @@ public class PhotoGalleryFragment extends Fragment {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_photo_gallery, container, false);
         mGridView = view.findViewById(R.id.gridView);
+        mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                GalleryItem galleryItem = Items.get(position);
+                Uri photoPageUrl = Uri.parse(galleryItem.getPhotoPageUrl());   // get photo page url
+                Intent intent = new Intent(getActivity(),PhotoPageActivity.class);
+                //Intent i = new Intent(Intent.ACTION_VIEW,photoPageUrl); this is good for using external browsers (BEST METHOD)
+                intent.setData(photoPageUrl);  // send url to photo activity class
+                startActivity(intent);
+            }
+        });
+
         setupAdapter();
         return view;
     }
